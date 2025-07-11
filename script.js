@@ -282,9 +282,9 @@ document.addEventListener('DOMContentLoaded', () => {
             currentShares = Array(numShops).fill(100 / numShops);
         } else {
             const adjustmentFactor = 1 / sumNextShares; // Already in probability, adjust to 1
-            let adjustedShares = nextShares.map(s => s * adjustmentFactor * 100); // Convert to percentage
+            let roundedShares = nextShares.map(s => s * adjustmentFactor * 100); // Convert to percentage
 
-            let roundedShares = adjustedShares.map(s => Math.round(s));
+            //let roundedShares = adjustedShares.map(s => Math.round(s));
             let roundedSum = roundedShares.reduce((sum, s) => sum + s, 0);
             let difference = 100 - roundedSum;
 
