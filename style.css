@@ -1,0 +1,197 @@
+body {
+    font-family: 'Arial', sans-serif;
+    margin: 0;
+    padding: 20px;
+    background-color: #f4f4f4;
+    color: #333;
+}
+
+.container {
+    max-width: 900px;
+    margin: 0 auto;
+    background-color: #fff;
+    padding: 30px;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+h1 {
+    color: #0056b3;
+    text-align: center;
+    margin-bottom: 30px;
+}
+
+.section {
+    background-color: #e9ecef;
+    padding: 20px;
+    border-radius: 5px;
+    margin-bottom: 20px;
+}
+
+h2 {
+    color: #0056b3;
+    margin-top: 0;
+}
+
+.input-group {
+    margin-bottom: 15px;
+}
+
+label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+}
+
+input[type="number"],
+input[type="range"] {
+    width: calc(100% - 10px);
+    padding: 8px;
+    margin-bottom: 10px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+button {
+    background-color: #007bff;
+    color: white;
+    padding: 10px 15px;
+    border: none;
+    border-radius: 4px;
+    cursor: pointer;
+    font-size: 16px;
+    margin-right: 10px;
+}
+
+button:hover {
+    background-color: #0056b3;
+}
+
+.share-slider-group {
+    display: flex;
+    align-items: center;
+    margin-bottom: 10px;
+}
+
+.share-slider-group label {
+    flex: 1;
+    margin-bottom: 0;
+}
+
+.share-slider-group input[type="range"] {
+    flex: 3;
+    margin-bottom: 0;
+}
+
+.share-slider-group span {
+    flex: 0.5;
+    text-align: right;
+    font-weight: bold;
+}
+
+.transition-matrix-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 15px;
+}
+
+.transition-matrix-table th,
+.transition-matrix-table td {
+    border: 1px solid #ddd;
+    padding: 8px;
+    text-align: center;
+}
+
+.transition-matrix-table th {
+    background-color: #f2f2f2;
+}
+
+.transition-matrix-table input[type="number"] {
+    width: 60px;
+    text-align: center;
+    -moz-appearance: textfield; /* Firefox */
+}
+
+.transition-matrix-table input[type="number"]::-webkit-outer-spin-button,
+.transition-matrix-table input[type="number"]::-webkit-inner-spin-button {
+    -webkit-appearance: none;
+    margin: 0;
+}
+
+#currentShares p {
+    font-size: 1.1em;
+    font-weight: bold;
+}
+
+#shareChart {
+    margin-top: 20px;
+}
+
+
+/* SVG for Transition Diagram */
+#transitionDiagram svg {
+    display: block;
+    margin: 20px auto;
+    background-color: #f9f9f9;
+    border-radius: 5px;
+}
+
+#transitionDiagram circle {
+    transition: fill 0.3s ease;
+}
+
+#transitionDiagram circle:hover {
+    fill: #0056b3;
+}
+
+#transitionDiagram text {
+    user-select: none;
+}
+
+/* MathML for Recurrence Relations */
+#recurrenceRelations math {
+    display: block;
+    overflow-x: auto;
+    padding: 10px;
+    background-color: #f9f9f9;
+    border-radius: 5px;
+    margin-top: 15px;
+}
+
+#recurrenceRelations mi, #recurrenceRelations mn, #recurrenceRelations mo {
+    font-size: 1.2em;
+}
+
+#recurrenceRelations mtable {
+    width: 100%;
+}
+
+#recurrenceRelations mtr {
+    vertical-align: middle;
+}
+
+#recurrenceRelations mtd {
+    padding: 5px;
+}
+
+#recurrenceRelations mo[maligngroup="alignGroup1"] {
+    text-align: center;
+}
+
+/* Styles for the new adjust buttons */
+.adjust-btn {
+    padding: 5px 8px;
+    font-size: 14px;
+    margin: 0 2px;
+    background-color: #6c757d;
+    border-radius: 3px;
+}
+
+.adjust-btn:hover {
+    background-color: #5a6268;
+}
+
+.diagram-controls {
+    text-align: center;
+    margin-bottom: 15px;
+}
