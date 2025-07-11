@@ -155,6 +155,13 @@ document.addEventListener('DOMContentLoaded', () => {
             currentShares = roundedShares;
         }
 
+        // Set the baseline for future calculations
+        initialSharesBaseline = [...currentShares];
+
+        // Reset the simulation month to 0 whenever the initial shares are changed
+        currentMonth = 0;
+        currentMonthSpan.textContent = currentMonth;
+
         currentShares.forEach((share, i) => {
             const slider = document.getElementById(`currentShare${i}`);
             const valueSpan = document.getElementById(`currentShareValue${i}`);
@@ -205,33 +212,82 @@ document.addEventListener('DOMContentLoaded', () => {
         displayRecurrenceRelations();
     }
 
-    // マルコフ連鎖の計算
-    function calculateNextShares() {
-        // Debug: Output transitionMatrix
-        // const matrixStr = transitionMatrix.map(row => row.join(', ')).join('\n');
-        // alert(`Transition Matrix:\n${matrixStr}`);
+    // --- New Helper Functions for Matrix Operations ---
+
+    // Function to multiply two matrices
+    function multiplyMatrices(A, B) {
+        const rowsA = A.length;
+        const colsA = A[0].length;
+        const rowsB = B.length;
+        const colsB = B[0].length;
+        if (colsA !== rowsB) {
+            throw new Error("Cannot multiply matrices: dimensions are not compatible.");
+        }
+
+        const C = Array(rowsA).fill(0).map(() => Array(colsB).fill(0));
+        for (let i = 0; i < rowsA; i++) {
+            for (let j = 0; j < colsB; j++) {
+                for (let k = 0; k < colsA; k++) {
+                    C[i][j] += A[i][k] * B[k][j];
+                }
+            }
+        }
+        return C;
+    }
+
+    // Function to raise a matrix to a power (exponentiation by squaring)
+    function power(matrix, exp) {
+        if (exp === 0) {
+            // Return identity matrix
+            return matrix.map((row, i) => row.map((_, j) => (i === j ? 1 : 0)));
+        }
+        if (exp === 1) {
+            return matrix;
+        }
+        if (exp % 2 === 0) {
+            const half = power(matrix, exp / 2);
+            return multiplyMatrices(half, half);
+        } else {
+            return multiplyMatrices(matrix, power(matrix, exp - 1));
+        }
+    }
+
+    // --- Rewritten Calculation Logic ---
+
+    // Calculates shares for a specific month from the initial state
+    function calculateSharesForMonth(month) {
+        if (month === 0) {
+            currentShares = [...initialSharesBaseline];
+            return;
+        }
+
+        // 1. Convert transition matrix from percentages (0-100) to probabilities (0-1)
+        const probMatrix = transitionMatrix.map(row => row.map(p => p / 100));
+
+        // 2. Calculate the transition matrix to the power of the month
+        const poweredMatrix = power(probMatrix, month);
+
+        // 3. Multiply the initial shares vector by the powered matrix
+        const initialSharesVector = initialSharesBaseline.map(s => s / 100);
         const nextShares = Array(numShops).fill(0);
-        for (let j = 0; j < numShops; j++) { // 次のショップ
-            for (let i = 0; i < numShops; i++) { // 現在のショップ
-                nextShares[j] += currentShares[i] * (transitionMatrix[i][j] / 100);
+        for (let j = 0; j < numShops; j++) { // For each resulting share
+            for (let i = 0; i < numShops; i++) { // Sum over the initial shares
+                nextShares[j] += initialSharesVector[i] * poweredMatrix[i][j];
             }
         }
 
-        // Normalize nextShares to ensure sum is exactly 100
+        // 4. Normalize the result to ensure the sum is exactly 100
         const sumNextShares = nextShares.reduce((sum, s) => sum + s, 0);
-        if (sumNextShares === 0) { // Avoid division by zero
-            currentShares = Array(numShops).fill(100 / numShops); // Reset if sum is 0
+        if (sumNextShares === 0) {
+            currentShares = Array(numShops).fill(100 / numShops);
         } else {
-            const adjustmentFactor = 100 / sumNextShares;
-            let adjustedShares = nextShares.map(s => s * adjustmentFactor);
+            const adjustmentFactor = 1 / sumNextShares; // Already in probability, adjust to 1
+            let adjustedShares = nextShares.map(s => s * adjustmentFactor * 100); // Convert to percentage
 
-            // Round to nearest integer and then ensure sum is 100
             let roundedShares = adjustedShares.map(s => Math.round(s));
             let roundedSum = roundedShares.reduce((sum, s) => sum + s, 0);
             let difference = 100 - roundedSum;
 
-            // Distribute the difference by adding/subtracting 1 from shares
-            // Prioritize adding/subtracting from shares that are not 0 or 100
             let i = 0;
             while (difference !== 0) {
                 if (difference > 0) {
@@ -239,18 +295,28 @@ document.addEventListener('DOMContentLoaded', () => {
                         roundedShares[i]++;
                         difference--;
                     }
-                } else { // difference < 0
+                } else {
                     if (roundedShares[i] > 0) {
                         roundedShares[i]--;
                         difference++;
                     }
                 }
-                i = (i + 1) % numShops; // Cycle through shares
+                i = (i + 1) % numShops;
             }
             currentShares = roundedShares;
         }
-        currentMonth++;
     }
+
+    // --- Update Simulation Flow ---
+
+    function runAndDisplaySimulation() {
+        calculateSharesForMonth(currentMonth);
+        currentMonthSpan.textContent = currentMonth;
+        updateCurrentSharesDisplay();
+        updateChart();
+        drawTransitionDiagram();
+    }
+
 
     // 現在のシェア表示を更新
     function updateCurrentSharesDisplay() {
@@ -602,31 +668,20 @@ document.addEventListener('DOMContentLoaded', () => {
     numShopsInput.addEventListener('change', generateSettings);
     // const applySettingsBtn = document.getElementById('applySettings'); // Removed as per user request
     nextMonthBtn.addEventListener('click', () => {
-        calculateNextShares();
-        currentMonthSpan.textContent = currentMonth;
-        updateCurrentSharesDisplay();
-        updateChart();
-        drawTransitionDiagram(); // Update diagram after simulation
+        currentMonth++;
+        runAndDisplaySimulation();
     });
     resetSimulationBtn.addEventListener('click', resetSimulation);
 
     // New buttons for diagram section
     nextMonthDiagramBtn.addEventListener('click', () => {
-        calculateNextShares();
-        currentMonthSpan.textContent = currentMonth;
-        updateCurrentSharesDisplay();
-        updateChart();
-        drawTransitionDiagram(); // Update diagram after simulation
+        currentMonth++;
+        runAndDisplaySimulation();
     });
     resetSimulationDiagramBtn.addEventListener('click', resetSimulation);
     advanceFiveYearsBtn.addEventListener('click', () => {
-        for (let i = 0; i < 60; i++) { // 5 years * 12 months/year = 60 months
-            calculateNextShares();
-        }
-        currentMonthSpan.textContent = currentMonth;
-        updateCurrentSharesDisplay();
-        updateChart();
-        drawTransitionDiagram(); // Update diagram after simulation
+        currentMonth += 60; // 5 years * 12 months/year = 60 months
+        runAndDisplaySimulation();
     });
 
     // 初期表示

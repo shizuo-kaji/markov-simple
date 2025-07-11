@@ -12,13 +12,10 @@
         <p>ハンバーガーショップのシェア争いをマルコフ連鎖でシミュレーションしよう！</p>
 
         <div class="section">
-            <h2>1. ショップ数と現在のシェアの設定</h2>
+            <h2>1. ショップ数の設定</h2>
             <div class="input-group">
                 <label for="numShops">ショップ数 (2〜5):</label>
                 <input type="number" id="numShops" value="3" min="2" max="5">
-            </div>
-            <div id="currentShareSettings">
-                <!-- 現在のシェア設定はJavaScriptで動的に生成 -->
             </div>
         </div>
 
@@ -31,7 +28,14 @@
         </div>
 
         <div class="section">
-            <h2>3. シミュレーション</h2>
+            <h2>3. 初期シェアの設定</h2>
+            <div id="currentShareSettings">
+                <!-- 現在のシェア設定はJavaScriptで動的に生成 -->
+            </div>
+        </div>
+
+        <div class="section">
+            <h2>4. シミュレーション</h2>
             <button id="nextMonth">1ヶ月進める</button>
             <button id="resetSimulation">リセット</button>
             <p>現在の月: <span id="currentMonth">0</span></p>
@@ -43,7 +47,7 @@
         </div>
 
         <div class="section">
-            <h2>4. 状態遷移ダイアグラム</h2>
+            <h2>5. 状態遷移ダイアグラム</h2>
             <div class="diagram-controls">
                 <button id="nextMonthDiagram">1ヶ月進める</button>
                 <button id="resetSimulationDiagram">リセット</button>
@@ -55,7 +59,7 @@
         </div>
 
         <div class="section">
-            <h2>5. 連立漸化式</h2>
+            <h2>6. 連立漸化式</h2>
             <div id="recurrenceRelations">
                 <!-- 連立漸化式はJavaScriptで動的に生成 -->
             </div>
