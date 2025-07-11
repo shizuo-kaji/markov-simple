@@ -67,7 +67,7 @@ document.addEventListener('DOMContentLoaded', () => {
             tableHTML += `<tr><th>${fromShopName}</th>`;
             for (let j = 0; j < numShops; j++) {
                 const defaultValue = (i === j) ? (100 / numShops).toFixed(0) : (0).toFixed(0); // 初期値を設定
-                transitionMatrix[i][j] = parseFloat(defaultValue) / 100;
+                transitionMatrix[i][j] = parseInt(defaultValue); // Store as integer percentage
                 tableHTML += `<td>
                     <button type="button" class="adjust-btn minus" data-row="${i}" data-col="${j}">-</button>
                     <input type="number" id="transition${i}-${j}" min="0" max="100" value="${defaultValue}">
@@ -128,21 +128,38 @@ document.addEventListener('DOMContentLoaded', () => {
             currentShares = Array(numShops).fill(100 / numShops);
         } else {
             const adjustmentFactor = 100 / total;
-            currentShares = tempShares.map(s => s * adjustmentFactor);
+            let adjustedShares = tempShares.map(s => s * adjustmentFactor);
 
-            // Distribute any remaining floating point error to ensure sum is exactly 100
-            const currentSum = currentShares.reduce((sum, s) => sum + s, 0);
-            const difference = 100 - currentSum;
-            if (Math.abs(difference) > 1e-9 && numShops > 0) { // Check for significant difference
-                currentShares[0] += difference; // Add/subtract difference to the first share
+            // Round to nearest integer and then ensure sum is 100
+            let roundedShares = adjustedShares.map(s => Math.round(s));
+            let roundedSum = roundedShares.reduce((sum, s) => sum + s, 0);
+            let difference = 100 - roundedSum;
+
+            // Distribute the difference by adding/subtracting 1 from shares
+            // Prioritize adding/subtracting from shares that are not 0 or 100
+            let i = 0;
+            while (difference !== 0) {
+                if (difference > 0) {
+                    if (roundedShares[i] < 100) {
+                        roundedShares[i]++;
+                        difference--;
+                    }
+                } else { // difference < 0
+                    if (roundedShares[i] > 0) {
+                        roundedShares[i]--;
+                        difference++;
+                    }
+                }
+                i = (i + 1) % numShops; // Cycle through shares
             }
+            currentShares = roundedShares;
         }
 
         currentShares.forEach((share, i) => {
             const slider = document.getElementById(`currentShare${i}`);
             const valueSpan = document.getElementById(`currentShareValue${i}`);
-            slider.value = share.toFixed(0); // Display rounded value
-            valueSpan.textContent = `${share.toFixed(0)}%`; // Display rounded value
+            slider.value = share; // Set slider value directly to integer
+            valueSpan.textContent = `${share}%`; // Display integer value
         });
 
         // currentShares is already updated, no need to set it again
@@ -179,9 +196,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
             for (let j = 0; j < numShops; j++) {
                 const input = document.getElementById(`transition${i}-${j}`);
-                const adjustedValue = rowValues[j];
-                input.value = adjustedValue.toFixed(0); // Display rounded value
-                transitionMatrix[i][j] = adjustedValue / 100; // Store precise value
+                const adjustedValue = Math.round(rowValues[j]); // Round to nearest integer
+                input.value = adjustedValue; // Display rounded integer value
+                transitionMatrix[i][j] = adjustedValue; // Store as integer percentage
             }
         }
         drawTransitionDiagram();
@@ -190,13 +207,48 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // マルコフ連鎖の計算
     function calculateNextShares() {
+        // Debug: Output transitionMatrix
+        // const matrixStr = transitionMatrix.map(row => row.join(', ')).join('\n');
+        // alert(`Transition Matrix:\n${matrixStr}`);
         const nextShares = Array(numShops).fill(0);
         for (let j = 0; j < numShops; j++) { // 次のショップ
             for (let i = 0; i < numShops; i++) { // 現在のショップ
-                nextShares[j] += currentShares[i] * transitionMatrix[i][j];
+                nextShares[j] += currentShares[i] * (transitionMatrix[i][j] / 100);
             }
         }
-        currentShares = nextShares;
+
+        // Normalize nextShares to ensure sum is exactly 100
+        const sumNextShares = nextShares.reduce((sum, s) => sum + s, 0);
+        if (sumNextShares === 0) { // Avoid division by zero
+            currentShares = Array(numShops).fill(100 / numShops); // Reset if sum is 0
+        } else {
+            const adjustmentFactor = 100 / sumNextShares;
+            let adjustedShares = nextShares.map(s => s * adjustmentFactor);
+
+            // Round to nearest integer and then ensure sum is 100
+            let roundedShares = adjustedShares.map(s => Math.round(s));
+            let roundedSum = roundedShares.reduce((sum, s) => sum + s, 0);
+            let difference = 100 - roundedSum;
+
+            // Distribute the difference by adding/subtracting 1 from shares
+            // Prioritize adding/subtracting from shares that are not 0 or 100
+            let i = 0;
+            while (difference !== 0) {
+                if (difference > 0) {
+                    if (roundedShares[i] < 100) {
+                        roundedShares[i]++;
+                        difference--;
+                    }
+                } else { // difference < 0
+                    if (roundedShares[i] > 0) {
+                        roundedShares[i]--;
+                        difference++;
+                    }
+                }
+                i = (i + 1) % numShops; // Cycle through shares
+            }
+            currentShares = roundedShares;
+        }
         currentMonth++;
     }
 
@@ -399,7 +451,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     probText.setAttribute("text-anchor", "middle");
                     probText.setAttribute("fill", "#333");
                     probText.setAttribute("font-size", "12");
-                    probText.textContent = `${(probability * 100).toFixed(0)}%`;
+                    probText.textContent = `${probability}%`;
                     svg.appendChild(probText);
                 }
             }
@@ -480,7 +532,7 @@ document.addEventListener('DOMContentLoaded', () => {
             let firstTerm = true;
             for (let i = 0; i < numShops; i++) {
                 const shopNameI = String.fromCharCode(65 + i);
-                const prob = transitionMatrix[i][j];
+                const prob = transitionMatrix[i][j]; // Now an integer percentage
 
                 if (prob > 0) {
                     if (!firstTerm) {
@@ -489,11 +541,11 @@ document.addEventListener('DOMContentLoaded', () => {
                         mrowRHS.appendChild(moPlusTerm);
                     }
 
-                    // prob S_I(t)
+                    // prob/100 S_I(t)
                     const mrowTerm = document.createElementNS(mathmlNamespace, "mrow");
 
                     const mnProb = document.createElementNS(mathmlNamespace, "mn");
-                    mnProb.textContent = prob.toFixed(2); // 小数点形式で表示
+                    mnProb.textContent = (prob / 100).toFixed(2); // Display as decimal
                     mrowTerm.appendChild(mnProb);
 
                     // No multiplication sign
