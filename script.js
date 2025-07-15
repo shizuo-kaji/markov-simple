@@ -56,7 +56,7 @@ document.addEventListener('DOMContentLoaded', () => {
         transitionMatrixSettingsDiv.innerHTML = '<h3>推移確率 (%)</h3>';
         const table = document.createElement('table');
         table.className = 'transition-matrix-table';
-        let tableHTML = '<thead><tr><th>From \\ To</th>';
+        let tableHTML = '<thead><tr><th>From \ To</th>';
         for (let i = 0; i < numShops; i++) {
             tableHTML += `<th>${String.fromCharCode(65 + i)}</th>`;
         }
@@ -84,7 +84,7 @@ document.addEventListener('DOMContentLoaded', () => {
         for (let i = 0; i < numShops; i++) {
             for (let j = 0; j < numShops; j++) {
                 const input = document.getElementById(`transition${i}-${j}`);
-                input.oninput = () => {
+                input.onchange = () => { // 'oninput'だと入力途中でも発火してしまうため'onchange'に変更
                     updateTransitionMatrixFromInputs();
                 };
             }
@@ -180,32 +180,49 @@ document.addEventListener('DOMContentLoaded', () => {
         for (let i = 0; i < numShops; i++) {
             let rowValues = [];
             for (let j = 0; j < numShops; j++) {
-                const value = parseFloat(document.getElementById(`transition${i}-${j}`).value);
+                // 入力が空の場合や数値でない場合は0として扱う
+                const value = parseFloat(document.getElementById(`transition${i}-${j}`).value) || 0;
                 rowValues.push(value);
             }
 
             const rowSum = rowValues.reduce((sum, v) => sum + v, 0);
+            let finalValues;
 
-            if (rowSum === 0) { // Avoid division by zero if all probabilities are 0
-                // Distribute 100% evenly if all are zero
-                rowValues = Array(numShops).fill(100 / numShops);
+            if (rowSum === 0) {
+                // ユーザーが意図的に0を入力した場合を考慮し、値を変更しない
+                finalValues = rowValues;
             } else {
                 const adjustmentFactor = 100 / rowSum;
-                rowValues = rowValues.map(v => v * adjustmentFactor);
+                let adjustedValues = rowValues.map(v => v * adjustmentFactor);
 
-                // Distribute any remaining floating point error to ensure sum is exactly 100
-                const currentAdjustedSum = rowValues.reduce((sum, v) => sum + v, 0);
-                const difference = 100 - currentAdjustedSum;
-                if (Math.abs(difference) > 1e-9 && numShops > 0) { // Check for significant difference
-                    rowValues[0] += difference; // Add/subtract difference to the first value in the row
+                // 整数に丸め、合計が正確に100になるように差分を分配する
+                let roundedValues = adjustedValues.map(s => Math.round(s));
+                let roundedSum = roundedValues.reduce((sum, s) => sum + s, 0);
+                let difference = 100 - roundedSum;
+
+                let k = 0;
+                while (difference !== 0) {
+                    if (difference > 0) {
+                        if (roundedValues[k] < 100) {
+                            roundedValues[k]++;
+                            difference--;
+                        }
+                    } else { // difference < 0
+                        if (roundedValues[k] > 0) {
+                            roundedValues[k]--;
+                            difference++;
+                        }
+                    }
+                    k = (k + 1) % numShops;
                 }
+                finalValues = roundedValues;
             }
 
             for (let j = 0; j < numShops; j++) {
                 const input = document.getElementById(`transition${i}-${j}`);
-                const adjustedValue = Math.round(rowValues[j]); // Round to nearest integer
-                input.value = adjustedValue; // Display rounded integer value
-                transitionMatrix[i][j] = adjustedValue; // Store as integer percentage
+                const adjustedValue = finalValues[j];
+                input.value = adjustedValue;
+                transitionMatrix[i][j] = adjustedValue;
             }
         }
         drawTransitionDiagram();
